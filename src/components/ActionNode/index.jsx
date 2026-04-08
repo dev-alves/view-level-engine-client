@@ -1,20 +1,13 @@
-import { Container } from "./styles";
-import { useDraggable } from "@dnd-kit/react";
+import { Handle, Position } from '@xyflow/react';
+import { NodeContainer, NodeTitle } from '../Conditions/shared';
 
-export function ActionNode() {
-
-  const { ref } = useDraggable({
-    id: 'draggable',
-  });
-
+function ActionNode({ data }) {
   return (
-    <Container ref={ref}>
-      <select>
-        <option>COMPLETE</option>
-        <option>BLOCKED</option>
-        <option>MASKED</option>
-      </select>
-    </Container>
+    <NodeContainer>
+      <NodeTitle>{data.label}</NodeTitle>
+      <Handle type="target" position={Position.Top} />
+    </NodeContainer>
   );
-
 }
+
+export default ActionNode;

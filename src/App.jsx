@@ -1,94 +1,103 @@
 import '@xyflow/react/dist/style.css';
-import { useCallback } from 'react';
-import { addEdge, Background, Controls, ReactFlow, ReactFlowProvider, useEdgesState, useNodesState, useReactFlow } from '@xyflow/react';
-import { useRef } from 'react';
-import { Sidebar } from './components/sidebar';
+import {
+  Background,
+  ConnectionMode,
+  Controls,
+  ReactFlow,
+  ReactFlowProvider,
+} from '@xyflow/react';
+import { useCallback, useState } from 'react';
+import { createRule } from './api';
+import ActionNode from './components/ActionNode';
+import { Sidebar } from './components/Sidebar';
+import ConditionNode from './components/Conditions/Condition';
+import ConditionWithArgsNode from './components/Conditions/ConditionWithArgs';
+import { buildFlowPayload, getApiErrorMessage } from './features/flow/utils';
+import { useFlowEditor } from './hooks/useFlowEditor';
 import { DragAndDropProvider } from './providers/DragAndDropProvider';
-import { useDragAndDrop } from './hooks/useDragAndDrop';
 
-let id = 0;
-const getId = () => `dndnode_${id++}`;
+const nodeTypes = {
+  actionNode: ActionNode,
+  conditionNode: ConditionNode,
+  conditionNodeWithArgs: ConditionWithArgsNode,
+};
 
 const DragAndDropFlow = () => {
+  const [payloadPreview, setPayloadPreview] = useState('');
+  const [payloadError, setPayloadError] = useState('');
+  const [submitStatus, setSubmitStatus] = useState('');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const {
+    edges,
+    handleConnect,
+    handleDragOver,
+    handleDrop,
+    isValidConnection,
+    nodes,
+    onEdgesChange,
+    onNodesChange,
+  } = useFlowEditor({ setPayloadError });
 
-  const reactFlowWrapper = useRef(null);
-  const [nodes, setNodes, onNodesChange] = useNodesState([]);
-  const [edges, setEdges, onEdgesChange] = useEdgesState([]);
-  const { screenToFlowPosition } = useReactFlow();
-  const { type, setType, nodeName } = useDragAndDrop();
+  const handleBuildPayload = useCallback(async () => {
+    try {
+      const payload = buildFlowPayload(nodes, edges);
 
-  const onConnect = useCallback((params) => setEdges((eds) => addEdge(params, eds)), [setEdges]);
+      setIsSubmitting(true);
+      setSubmitStatus('');
+      setPayloadPreview(JSON.stringify(payload, null, 2));
+      setPayloadError('');
 
-  const onDragOver = useCallback((event) => {
-    event.preventDefault();
-    event.dataTransfer.dropEffect = 'move';
-  }, []);
+      const response = await createRule(payload);
 
-  const onDrop = useCallback(
-    (event) => {
-      event.preventDefault();
-      if (!type) {
-        return;
-      }
-
-      const position = screenToFlowPosition({
-        x: event.clientX,
-        y: event.clientY,
-      });
-      
-      if (nodes.length === 0) {
-        id = 0;
-      }
-
-      const typeValue = id === 0 ? 'input' : type === 'ACTION' ? 'output' : 'default';
-
-      const newNode = {
-        id: getId(),
-        type: typeValue,
-        position,
-        data: { label: nodeName },
-      };
-
-      setNodes((nds) => nds.concat(newNode));
-    },
-    [screenToFlowPosition, type, nodeName, nodes, setNodes],
-  );
-
-  const onDragStart = (event, nodeType) => {
-    setType(nodeType);
-    event.dataTransfer.setData('text/plain', nodeType);
-    event.dataTransfer.effectAllowed = 'move';
-  };
+      setSubmitStatus(
+        `Payload enviado com sucesso para /engine/rule.\n${JSON.stringify(response, null, 2)}`,
+      );
+    } catch (error) {
+      setPayloadPreview('');
+      setSubmitStatus('');
+      setPayloadError(getApiErrorMessage(error));
+    } finally {
+      setIsSubmitting(false);
+    }
+  }, [edges, nodes]);
 
   return (
     <div className="dndflow">
-      <div className="reactflow-wrapper" ref={reactFlowWrapper}>
+      <Sidebar
+        onBuildPayload={handleBuildPayload}
+        payloadPreview={payloadPreview}
+        payloadError={payloadError}
+        submitStatus={submitStatus}
+        isSubmitting={isSubmitting}
+      />
+      <div className="reactflow-wrapper">
         <ReactFlow
+          connectionMode={ConnectionMode.Loose}
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
           onEdgesChange={onEdgesChange}
-          onConnect={onConnect}
-          onDrop={onDrop}
-          onDragStart={onDragStart}
-          onDragOver={onDragOver}
+          onConnect={handleConnect}
+          isValidConnection={isValidConnection}
+          onDrop={handleDrop}
+          onDragOver={handleDragOver}
           fitView
+          nodeTypes={nodeTypes}
         >
           <Controls />
           <Background />
         </ReactFlow>
       </div>
-      <Sidebar />
     </div>
   );
-}
+};
 
 export default function App() {
   return (
-  <ReactFlowProvider>
-    <DragAndDropProvider>
-      <DragAndDropFlow />
-    </DragAndDropProvider>
-  </ReactFlowProvider>
+    <ReactFlowProvider>
+      <DragAndDropProvider>
+        <DragAndDropFlow />
+      </DragAndDropProvider>
+    </ReactFlowProvider>
   );
 }

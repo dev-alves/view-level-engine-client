@@ -1,39 +1,60 @@
-import { useDragAndDrop } from "../../hooks/useDragAndDrop";
-import api from '../../api/';
-import { useEffect, useState } from "react";
+import { useDragAndDrop } from '../../hooks/useDragAndDrop';
+import { useOperators } from '../../hooks/useOperators';
 
-export function Sidebar () {
-  const  { setType, setNodeName } = useDragAndDrop();
+const getOperatorClassName = (type) => {
+  if (type === 'ACTION') {
+    return 'dndnode input';
+  }
 
-  const [operators, setOperators] = useState([]);
+  if (type === 'CONDITION') {
+    return 'dndnode output';
+  }
 
-  useEffect(() => {
-    const fetchData = async() => {
-      try {
-        const response = await api.get('/rules/operators');
-        setOperators(response.data);
-      } catch(err) {
-        console.log(err);
-      }
-    }
-    fetchData();
-  }, []);
+  return 'dndnode';
+};
 
-  const onDragStart = (event, nodeName, nodeType) => {
-    setNodeName(nodeName);
-    setType(nodeType);
-    event.dataTransfer.effectAllowed = 'move';
+export function Sidebar ({
+  onBuildPayload,
+  payloadPreview,
+  payloadError,
+  submitStatus,
+  isSubmitting,
+}) {
+  const { setSelectedOperator } = useDragAndDrop();
+  const operators = useOperators();
+
+  const onDragStart = (event, operator) => {
+    setSelectedOperator(operator);
+    event.dataTransfer.setData('text/plain', String(operator.id));
   };
 
   return (
-    <aside>
+    <aside id="sidebar">
       <div className="description">Operações e ações</div>
-      {operators.map(op => {
-        const actionStyle = op.type === 'ACTION' ?
-          'dndnode input' : op.type === 'CONDITION' ?
-          'dndnode output' : 'dndnode';
+      <button
+        type="button"
+        className="payload-button"
+        onClick={onBuildPayload}
+        disabled={isSubmitting}
+      >
+        {isSubmitting ? 'Enviando...' : 'Gerar payload e enviar'}
+      </button>
+      {payloadError ? <p className="payload-error">{payloadError}</p> : null}
+      {submitStatus ? (
+        <pre className="payload-success">{submitStatus}</pre>
+      ) : null}
+      {payloadPreview ? (
+        <pre className="payload-preview">{payloadPreview}</pre>
+      ) : null}
+      {operators.map((op) => {
         return (
-          <div id={op.id} className={actionStyle} onDragStart={(event) => onDragStart(event, op.name, op.type)} draggable>
+          <div
+            key={op.id}
+            id={op.id}
+            className={getOperatorClassName(op.type)}
+            onDragStart={(event) => onDragStart(event, op)}
+            draggable
+          >
             {op.name}
           </div>
         );
