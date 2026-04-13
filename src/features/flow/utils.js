@@ -57,11 +57,11 @@ export const buildNodeData = (operator, onChangeArguments) => {
     label: operator.name,
     apiType,
     operation: isConditionType(apiType)
-      ? getOperatorValue(operator, ['operation', 'code', 'key', 'value', 'name'])
+      ? getOperatorValue(operator, ['operation', 'key', 'value', 'name'])
       : null,
     set:
       apiType === ACTION
-        ? getOperatorValue(operator, ['set', 'code', 'key', 'value', 'name'])
+        ? getOperatorValue(operator, ['set', 'key', 'value', 'name'])
         : null,
     arguments:
       apiType === CONDITION_WITH_ARGS ? operator.arguments ?? { value: '' } : null,
@@ -205,7 +205,6 @@ export const buildFlowPayload = (nodes, edges) => {
   }
 
   return {
-    version: 1,
     startNode,
     statusEnum: 'PUBLISHED',
     nodes: payloadNodes,
