@@ -149,9 +149,16 @@ const validatePayloadNode = (nodePayload, nodeId) => {
 };
 
 const buildPayloadNode = (node, edges) => {
+  const basePayload = {
+    type: node.data.apiType,
+    label: node.data.label,
+    operatorId: node.data.operatorId,
+    isStartNode: node.data.isStartNode,
+  };
+
   if (isConditionType(node.data.apiType)) {
     return {
-      type: node.data.apiType,
+      ...basePayload,
       operation: node.data.operation,
       arguments: node.data.arguments,
       onTrue: getConditionBranch(edges, node.id, 'true'),
@@ -162,7 +169,7 @@ const buildPayloadNode = (node, edges) => {
 
   if (node.data.apiType === ACTION) {
     return {
-      type: ACTION,
+      ...basePayload,
       operation: null,
       arguments: null,
       onTrue: null,
@@ -189,6 +196,10 @@ export const buildFlowPayload = (nodes, edges) => {
     }),
   );
 
+  const positions = Object.fromEntries(
+    nodes.map((node) => [node.id, node.position])
+  );
+
   if (!canBeStartNode(payloadNodes[startNode]?.type)) {
     throw new Error(START_NODE_ERROR);
   }
@@ -196,8 +207,10 @@ export const buildFlowPayload = (nodes, edges) => {
   return {
     version: 1,
     startNode,
-    statusEnum: 'DRAFT',
+    statusEnum: 'PUBLISHED',
     nodes: payloadNodes,
+    positions,
+    edges,
   };
 };
 
