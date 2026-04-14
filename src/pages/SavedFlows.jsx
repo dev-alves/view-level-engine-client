@@ -1,6 +1,6 @@
 import { useMemo, useEffect, useState, useCallback } from 'react';
 import { Background, Controls, ReactFlow } from '@xyflow/react';
-import { getNodeType } from '../features/flow/utils';
+import { getNodeType, denormalizeEdgesFromBackend } from '../features/flow/utils';
 import { getRules } from '../api';
 import ActionNode from '../components/ActionNode';
 import ConditionNode from '../components/Conditions/Condition';
@@ -26,12 +26,14 @@ const buildNodes = (flow) => {
       arguments: nodeData.arguments,
       set: nodeData.set,
       isStartNode: nodeId === flow.startNode,
+      isReadOnly: true,
     },
   }));
 };
 
 const buildEdges = (flow) => {
-  return flow?.edges ?? [];
+  const edges = flow?.edges ?? [];
+  return denormalizeEdgesFromBackend(edges);
 };
 
 export const SavedFlows = ({ selectedFlowId, onSelectFlow }) => {

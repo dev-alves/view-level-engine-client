@@ -33,6 +33,7 @@ function ConditionWithArgsNode({ data }) {
         type="text"
         value={data.arguments?.value ?? ''}
         onChange={onChange}
+        disabled={data.isReadOnly}
       />
     </Container>
   );

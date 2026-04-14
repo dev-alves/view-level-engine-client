@@ -99,7 +99,7 @@ export const validateConnection = (connection, nodes, edges) => {
     return false;
   }
 
-  if (sourceHandle !== 'true' && sourceHandle !== 'false') {
+  if (sourceHandle !== true && sourceHandle !== false) {
     return false;
   }
 
@@ -161,8 +161,8 @@ const buildPayloadNode = (node, edges) => {
       ...basePayload,
       operation: node.data.operation,
       arguments: node.data.arguments,
-      onTrue: getConditionBranch(edges, node.id, 'true'),
-      onFalse: getConditionBranch(edges, node.id, 'false'),
+      onTrue: getConditionBranch(edges, node.id, true),
+      onFalse: getConditionBranch(edges, node.id, false),
       set: null,
     };
   }
@@ -181,15 +181,30 @@ const buildPayloadNode = (node, edges) => {
   throw new Error(`O node ${node.id} possui um tipo de API invalido.`);
 };
 
+export const normalizeEdgesForBackend = (edges) => {
+  return edges.map((edge) => ({
+    ...edge,
+    sourceHandle: edge.sourceHandle === 'true' ? true : false,
+  }));
+};
+
+export const denormalizeEdgesFromBackend = (edges) => {
+  return edges.map((edge) => ({
+    ...edge,
+    sourceHandle: edge.sourceHandle === true ? 'true' : 'false',
+  }));
+};
+
 export const buildFlowPayload = (nodes, edges) => {
   if (nodes.length === 0) {
     throw new Error('Crie pelo menos um node antes de gerar o payload.');
   }
 
-  const startNode = findStartNodeId(nodes, edges);
+  const normalizedEdges = normalizeEdgesForBackend(edges);
+  const startNode = findStartNodeId(nodes, normalizedEdges);
   const payloadNodes = Object.fromEntries(
     nodes.map((node) => {
-      const payloadNode = buildPayloadNode(node, edges);
+      const payloadNode = buildPayloadNode(node, normalizedEdges);
       validatePayloadNode(payloadNode, node.id);
 
       return [node.id, payloadNode];
@@ -209,7 +224,7 @@ export const buildFlowPayload = (nodes, edges) => {
     statusEnum: 'PUBLISHED',
     nodes: payloadNodes,
     positions,
-    edges,
+    edges: normalizedEdges,
   };
 };
 
