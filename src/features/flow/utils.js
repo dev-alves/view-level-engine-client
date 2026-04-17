@@ -65,7 +65,6 @@ export const buildNodeData = (operator, onChangeArguments) => {
         : null,
     arguments:
       apiType === CONDITION_WITH_ARGS ? operator.arguments ?? { value: '' } : null,
-    operatorId: operator.id ?? null,
     onChangeArguments,
     isStartNode: false,
   };
@@ -89,7 +88,6 @@ export const buildFlowNodesFromApi = (
       operation: nodeData.operation,
       arguments: nodeData.arguments,
       set: nodeData.set,
-      operatorId: nodeData.operatorId ?? null,
       isStartNode: nodeId === flow.startNode,
       onChangeArguments:
         createOnChangeArguments?.(nodeId) ?? (() => {}),
@@ -184,7 +182,6 @@ const buildPayloadNode = (node, edges) => {
   const basePayload = {
     type: node.data.apiType,
     label: node.data.label,
-    operatorId: node.data.operatorId,
     isStartNode: node.data.isStartNode,
   };
 

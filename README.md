@@ -1,8 +1,8 @@
 # View Level Flow Client
 
-Aplicacao front-end para montar regras de decisao em formato visual, usando drag and drop, e enviar o fluxo gerado para uma API de engine de regras.
+Aplicacao front-end para montar, visualizar e editar regras de decisao em formato visual, usando drag and drop, e se comunicar com uma API de engine de regras.
 
-O usuario arrasta operadores para o canvas, conecta os nos em um grafo e o cliente transforma esse desenho em um payload estruturado para o endpoint `POST /engine/rule`.
+O usuario pode criar novos fluxos arrastando operadores para o canvas, visualizar fluxos ja salvos e editar fluxos existentes. O cliente transforma o desenho em um payload estruturado e o envia para os endpoints da API.
 
 ## O que essa app faz
 
@@ -12,6 +12,17 @@ O usuario arrasta operadores para o canvas, conecta os nos em um grafo e o clien
 - Valida restricoes basicas do fluxo antes de montar o payload.
 - Exibe o JSON gerado no proprio front-end.
 - Envia o fluxo para a API local em `http://localhost:8080/engine/rule`.
+- Lista fluxos ja salvos buscados em `GET /rules`.
+- Permite visualizar o diagrama de qualquer fluxo salvo em modo read-only.
+- Permite editar um fluxo existente e persistir as alteracoes via `PUT /engine/rule/:id`.
+
+## Navegacao
+
+A aplicacao possui tres visoes acessiveis pelo menu superior:
+
+- **Criar fluxo**: editor visual com drag and drop para criar um novo fluxo.
+- **Visualizar fluxos**: lista os fluxos salvos na API e exibe o diagrama do fluxo selecionado em modo somente leitura.
+- **Editar fluxo**: abre quando o usuario clica em "Editar" na tela de visualizacao; permite modificar o grafo de um fluxo existente e salvar as alteracoes.
 
 ## Stack
 
@@ -24,7 +35,7 @@ O usuario arrasta operadores para o canvas, conecta os nos em um grafo e o clien
 
 ## Regras de negocio do fluxo
 
-Pelo comportamento implementado hoje, o editor trabalha com tres tipos principais:
+O editor trabalha com tres tipos principais de node:
 
 - `CONDITION`
 - `CONDITION_WITH_ARGS`
@@ -42,7 +53,7 @@ Regras aplicadas no front-end:
 
 ## Payload gerado
 
-Ao clicar em "Gerar payload e enviar", o front-end monta um objeto com este formato:
+Ao clicar em "Gerar payload e enviar" (criacao) ou "Atualizar" (edicao), o front-end monta um objeto com este formato:
 
 ```json
 {
@@ -52,6 +63,8 @@ Ao clicar em "Gerar payload e enviar", o front-end monta um objeto com este form
   "nodes": {
     "node1": {
       "type": "CONDITION",
+      "label": "Customer Has Balance",
+      "isStartNode": true,
       "operation": "customerHasBalance",
       "arguments": null,
       "onTrue": "node2",
@@ -66,6 +79,7 @@ Observacoes:
 
 - `CONDITION_WITH_ARGS` envia `arguments`.
 - `ACTION` envia `set` e nao possui `onTrue` nem `onFalse`.
+- Os campos `label` e `isStartNode` sao incluidos em todos os nodes.
 - O preview do payload aparece na sidebar antes e durante o envio.
 
 ## Endpoints esperados
@@ -78,10 +92,14 @@ http://localhost:8080
 
 Endpoints utilizados:
 
-- `GET /rules/operators`: retorna a lista de operadores exibidos na sidebar.
-- `POST /engine/rule`: recebe o payload do fluxo montado no editor.
+| Metodo | Endpoint              | Descricao                                          |
+|--------|-----------------------|----------------------------------------------------|
+| GET    | `/rules/operators`    | Retorna a lista de operadores exibidos na sidebar. |
+| GET    | `/rules`              | Retorna todos os fluxos salvos.                    |
+| POST   | `/engine/rule`        | Cria um novo fluxo a partir do payload do editor.  |
+| PUT    | `/engine/rule/:id`    | Atualiza um fluxo existente pelo seu ID.           |
 
-Exemplo esperado de operador vindo da API:
+Exemplo esperado de operador vindo da API (`GET /rules/operators`):
 
 ```json
 [
@@ -151,29 +169,47 @@ npm run lint
 
 ```txt
 src/
-  api/                       camada HTTP com axios
+  api/                       camada HTTP com axios (createRule, updateRule, getRules)
   components/
     ActionNode/             node visual de acao
     Conditions/
       Condition/            node visual de condicao
       ConditionWithArgs/    node de condicao com input de argumentos
   contexts/                 contexto de drag and drop
-  features/flow/            regras de validacao e montagem de payload
+  features/flow/            regras de validacao, montagem e normalizacao de payload
   hooks/
     useFlowEditor.jsx       estado do grafo, drop e conexoes
     useOperators.jsx        busca operadores na API
+  pages/
+    EditFlow.jsx            pagina de edicao de fluxo existente
+    SavedFlows.jsx          pagina de listagem e visualizacao de fluxos salvos
   providers/                provider do contexto de drag and drop
-  App.jsx                   composicao principal do editor
+  App.jsx                   shell da aplicacao com navegacao entre paginas
 ```
 
 ## Fluxo da interface
 
-1. A sidebar carrega operadores a partir da API.
+### Criar fluxo
+
+1. A sidebar carrega operadores a partir de `GET /rules/operators`.
 2. O usuario arrasta um operador para o canvas.
-3. O editor cria um node compatível com o tipo do operador.
+3. O editor cria um node compativel com o tipo do operador.
 4. O usuario conecta os nodes pelas saidas `true` e `false`.
 5. O cliente valida a estrutura do grafo.
-6. O payload e serializado e enviado para a API.
+6. O payload e serializado e enviado para `POST /engine/rule`.
+
+### Visualizar fluxos
+
+1. A pagina busca todos os fluxos em `GET /rules`.
+2. A lista de fluxos e exibida na sidebar esquerda.
+3. O fluxo selecionado e renderizado como diagrama em modo read-only.
+4. O botao "Editar" abre o fluxo na visao de edicao.
+
+### Editar fluxo
+
+1. O fluxo selecionado e carregado e seus nodes e conexoes sao reconstruidos no canvas.
+2. O usuario modifica o grafo normalmente.
+3. Ao confirmar, o payload atualizado e enviado para `PUT /engine/rule/:id`.
 
 ## Pontos de atencao atuais
 
@@ -181,6 +217,7 @@ src/
 - Nao ha tratamento visual para falha no carregamento inicial dos operadores; o erro vai apenas para o console.
 - Ainda nao existe suite de testes automatizados.
 - O campo de argumentos em `CONDITION_WITH_ARGS` hoje trabalha com a chave `value`.
+- O fluxo de criacao (builder) nao recarrega a lista de fluxos salvos automaticamente apos o envio.
 
 ## Possiveis evolucoes
 
@@ -188,4 +225,5 @@ src/
 - Adicionar estados de loading e erro para a carga de operadores.
 - Criar testes para `buildFlowPayload` e validacoes de conexao.
 - Permitir edicao mais rica dos argumentos por tipo de operador.
-- Persistir e recarregar fluxos salvos.
+- Redirecionar para a lista de fluxos apos criacao bem-sucedida.
+- Adicionar confirmacao antes de descartar edicoes nao salvas.
