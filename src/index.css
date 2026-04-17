@@ -297,6 +297,10 @@ body {
 }
 
 .saved-flow-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 16px;
   padding: 18px;
   border-bottom: 1px solid #f1f5f9;
 }
@@ -313,9 +317,55 @@ body {
   font-size: 0.95rem;
 }
 
+.saved-flow-edit-button {
+  flex-shrink: 0;
+  align-self: center;
+  min-width: 108px;
+}
+
+.edit-flow-page {
+  display: flex;
+  flex-direction: column;
+  min-height: calc(100vh - 76px);
+  height: calc(100vh - 76px);
+}
+
+.edit-flow-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 18px;
+  padding: 20px 20px 0;
+}
+
+.edit-flow-info h2 {
+  margin: 0;
+  font-size: 1.2rem;
+  color: #0f172a;
+}
+
+.edit-flow-info p {
+  margin: 8px 0 0;
+  color: #64748b;
+  font-size: 0.95rem;
+}
+
+.edit-flow-actions {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.edit-flow-layout {
+  flex: 1;
+  min-height: 0;
+  height: calc(100vh - 158px);
+}
+
 .reactflow-wrapper {
   flex-grow: 1;
   height: 100%;
+  min-height: 320px;
   background: #f8fafc;
 }
 
@@ -336,5 +386,15 @@ body {
   .saved-flow-view {
     min-height: auto;
     width: 100%;
+  }
+
+  .saved-flow-meta,
+  .edit-flow-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .saved-flow-edit-button {
+    align-self: flex-start;
   }
 }

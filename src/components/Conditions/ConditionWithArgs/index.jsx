@@ -15,18 +15,20 @@ function ConditionWithArgsNode({ data }) {
   return (
     <Container>
       <Title>{data.label}</Title>
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Top} isConnectable={true} />
       <Handle
         id="true"
         type="source"
         style={{ background: 'green' }}
         position={Position.Right}
+        isConnectable={true}
       />
       <Handle
         id="false"
         type="source"
         style={{ background: 'red' }}
         position={Position.Left}
+        isConnectable={true}
       />
       <Input
         id="value"

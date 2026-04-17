@@ -71,6 +71,38 @@ export const buildNodeData = (operator, onChangeArguments) => {
   };
 };
 
+export const buildFlowNodesFromApi = (
+  flow,
+  createOnChangeArguments,
+) => {
+  if (!flow?.nodes) {
+    return [];
+  }
+
+  return Object.entries(flow.nodes).map(([nodeId, nodeData]) => ({
+    id: nodeId,
+    type: getNodeType(nodeData.type),
+    position: flow.positions?.[nodeId] ?? { x: 0, y: 0 },
+    data: {
+      label: nodeData.label || nodeData.operation || nodeData.set || nodeId,
+      apiType: nodeData.type,
+      operation: nodeData.operation,
+      arguments: nodeData.arguments,
+      set: nodeData.set,
+      operatorId: nodeData.operatorId ?? null,
+      isStartNode: nodeId === flow.startNode,
+      onChangeArguments:
+        createOnChangeArguments?.(nodeId) ?? (() => {}),
+    },
+  }));
+};
+
+export const buildFlowEdgesFromBackend = (flow) => {
+  const edges = flow?.edges ?? [];
+
+  return denormalizeEdgesFromBackend(edges);
+};
+
 export const getStartNodeIds = (nodes, edges) => {
   const targets = new Set(edges.map((edge) => edge.target));
 
@@ -99,7 +131,7 @@ export const validateConnection = (connection, nodes, edges) => {
     return false;
   }
 
-  if (sourceHandle !== true && sourceHandle !== false) {
+  if (sourceHandle !== 'true' && sourceHandle !== 'false') {
     return false;
   }
 
@@ -161,8 +193,8 @@ const buildPayloadNode = (node, edges) => {
       ...basePayload,
       operation: node.data.operation,
       arguments: node.data.arguments,
-      onTrue: getConditionBranch(edges, node.id, true),
-      onFalse: getConditionBranch(edges, node.id, false),
+      onTrue: getConditionBranch(edges, node.id, 'true'),
+      onFalse: getConditionBranch(edges, node.id, 'false'),
       set: null,
     };
   }
@@ -200,11 +232,10 @@ export const buildFlowPayload = (nodes, edges) => {
     throw new Error('Crie pelo menos um node antes de gerar o payload.');
   }
 
-  const normalizedEdges = normalizeEdgesForBackend(edges);
-  const startNode = findStartNodeId(nodes, normalizedEdges);
+  const startNode = findStartNodeId(nodes, edges);
   const payloadNodes = Object.fromEntries(
     nodes.map((node) => {
-      const payloadNode = buildPayloadNode(node, normalizedEdges);
+      const payloadNode = buildPayloadNode(node, edges);
       validatePayloadNode(payloadNode, node.id);
 
       return [node.id, payloadNode];
@@ -218,6 +249,8 @@ export const buildFlowPayload = (nodes, edges) => {
   if (!canBeStartNode(payloadNodes[startNode]?.type)) {
     throw new Error(START_NODE_ERROR);
   }
+
+  const normalizedEdges = normalizeEdgesForBackend(edges);
 
   return {
     startNode,
@@ -233,3 +266,22 @@ export const getApiErrorMessage = (error) =>
   error.response?.data?.error ??
   (typeof error.response?.data === 'string' ? error.response.data : null) ??
   error.message;
+
+export const getFlowId = (flow, fallbackIndex = 0) => {
+  const rawId = flow?.id;
+
+  if (rawId === undefined || rawId === null || rawId === '') {
+    return `flow-${fallbackIndex}`;
+  }
+
+  return String(rawId);
+};
+
+export const normalizeFlowList = (data) => {
+  const flowsList = Array.isArray(data) ? data : [data];
+
+  return flowsList.map((flow, index) => ({
+    ...flow,
+    id: getFlowId(flow, index),
+  }));
+};

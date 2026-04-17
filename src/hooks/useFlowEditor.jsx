@@ -2,6 +2,8 @@ import { addEdge, useEdgesState, useNodesState, useReactFlow } from '@xyflow/rea
 import { useCallback, useEffect, useRef } from 'react';
 import { useDragAndDrop } from './useDragAndDrop';
 import {
+  buildFlowEdgesFromBackend,
+  buildFlowNodesFromApi,
   buildNodeData,
   canBeStartNode,
   FIRST_NODE_ERROR,
@@ -23,11 +25,25 @@ const mergeArguments = (currentArguments, nextArguments) => {
   };
 };
 
-export const useFlowEditor = ({ setPayloadError }) => {
+const getNextNodeNumber = (nodes) => {
+  const maxNodeNumber = nodes.reduce((currentMax, node) => {
+    const match = /^node(\d+)$/.exec(node.id);
+
+    if (!match) {
+      return currentMax;
+    }
+
+    return Math.max(currentMax, Number(match[1]));
+  }, 0);
+
+  return maxNodeNumber + 1;
+};
+
+export const useFlowEditor = ({ setPayloadError, persistedFlow = null }) => {
   const [nodes, setNodes, onNodesChange] = useNodesState([]);
   const [edges, setEdges, onEdgesChange] = useEdgesState([]);
   const nextNodeId = useRef(1);
-  const { screenToFlowPosition } = useReactFlow();
+  const { fitView, screenToFlowPosition } = useReactFlow();
   const { selectedOperator } = useDragAndDrop();
 
   const updateNodeData = useCallback(
@@ -51,6 +67,39 @@ export const useFlowEditor = ({ setPayloadError }) => {
     },
     [setNodes],
   );
+
+  const loadPersistedFlow = useCallback(
+    (flow) => {
+      const nextNodes = buildFlowNodesFromApi(
+        flow,
+        (nodeId) => (argumentsPatch) => {
+          updateNodeData(nodeId, { arguments: argumentsPatch });
+        },
+      );
+      const nextEdges = buildFlowEdgesFromBackend(flow);
+
+      nextNodeId.current = getNextNodeNumber(nextNodes);
+      setNodes(nextNodes);
+      setEdges(nextEdges);
+      setPayloadError('');
+
+      requestAnimationFrame(() => {
+        fitView({
+          duration: 300,
+          padding: 0.2,
+        });
+      });
+    },
+    [fitView, setEdges, setNodes, setPayloadError, updateNodeData],
+  );
+
+  useEffect(() => {
+    if (!persistedFlow) {
+      return;
+    }
+
+    loadPersistedFlow(persistedFlow);
+  }, [loadPersistedFlow, persistedFlow]);
 
   useEffect(() => {
     const startNodeIds = getStartNodeIds(nodes, edges);
@@ -159,6 +208,7 @@ export const useFlowEditor = ({ setPayloadError }) => {
     handleDragOver,
     handleDrop,
     isValidConnection,
+    loadPersistedFlow,
     nodes,
     onEdgesChange,
     onNodesChange,

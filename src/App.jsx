@@ -16,6 +16,7 @@ import { buildFlowPayload, getApiErrorMessage } from './features/flow/utils';
 import { useFlowEditor } from './hooks/useFlowEditor';
 import { DragAndDropProvider } from './providers/DragAndDropProvider';
 import { SavedFlows } from './pages/SavedFlows';
+import { EditFlow } from './pages/EditFlow';
 
 const nodeTypes = {
   actionNode: ActionNode,
@@ -74,7 +75,8 @@ const DragAndDropFlow = () => {
       <div className="reactflow-wrapper">
         <ReactFlow
           style={{ width: '100%', height: '100%' }}
-          connectionMode={ConnectionMode.Loose}
+          connectionMode={ConnectionMode.Strict}
+          fitConnectionLineToNodes={true}
           nodes={nodes}
           edges={edges}
           onNodesChange={onNodesChange}
@@ -110,18 +112,42 @@ export default function App() {
     setCurrentPage('builder');
   }, []);
 
+  const openEditFlow = useCallback((flowId) => {
+    setSelectedFlowId(flowId);
+    setCurrentPage('edit');
+  }, []);
+
+  const closeEditFlow = useCallback(() => {
+    setCurrentPage('saved');
+  }, []);
+
+  const handleFlowUpdated = useCallback(() => {
+    setCurrentPage('saved');
+  }, []);
+
   const pageContent = useMemo(() => {
     if (currentPage === 'saved') {
       return (
         <SavedFlows
           selectedFlowId={selectedFlowId}
           onSelectFlow={selectSavedFlow}
+          onEditFlow={openEditFlow}
+        />
+      );
+    }
+
+    if (currentPage === 'edit') {
+      return (
+        <EditFlow
+          flowId={selectedFlowId}
+          onFlowUpdated={handleFlowUpdated}
+          onCancel={closeEditFlow}
         />
       );
     }
 
     return <DragAndDropFlow />;
-  }, [currentPage, selectedFlowId, selectSavedFlow, openBuilder]);
+  }, [currentPage, selectedFlowId, selectSavedFlow, openEditFlow, handleFlowUpdated, closeEditFlow]);
 
   return (
     <ReactFlowProvider>

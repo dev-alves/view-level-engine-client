@@ -19,6 +19,9 @@ export function Sidebar ({
   payloadError,
   submitStatus,
   isSubmitting,
+  actionLabel = 'Gerar payload e enviar',
+  actionSubmittingLabel = 'Enviando...',
+  description = 'Operações e ações',
 }) {
   const { setSelectedOperator } = useDragAndDrop();
   const operators = useOperators();
@@ -30,14 +33,14 @@ export function Sidebar ({
 
   return (
     <aside id="sidebar">
-      <div className="description">Operações e ações</div>
+      <div className="description">{description}</div>
       <button
         type="button"
         className="payload-button"
         onClick={onBuildPayload}
         disabled={isSubmitting}
       >
-        {isSubmitting ? 'Enviando...' : 'Gerar payload e enviar'}
+        {isSubmitting ? actionSubmittingLabel : actionLabel}
       </button>
       {payloadError ? <p className="payload-error">{payloadError}</p> : null}
       {submitStatus ? (

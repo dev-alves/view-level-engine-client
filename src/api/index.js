@@ -12,6 +12,11 @@ export const createRule = async (payload) => {
   return response.data;
 };
 
+export const updateRule = async (id, payload) => {
+  const response = await api.put(`/engine/rule/${id}`, payload);
+  return response.data;
+};
+
 export const getRules = async () => {
   const response = await api.get('/rules');
   return response.data;

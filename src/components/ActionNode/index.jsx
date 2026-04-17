@@ -5,7 +5,7 @@ function ActionNode({ data }) {
   return (
     <NodeContainer>
       <NodeTitle>{data.label}</NodeTitle>
-      <Handle type="target" position={Position.Top} />
+      <Handle type="target" position={Position.Top} isConnectable={true} />
     </NodeContainer>
   );
 }

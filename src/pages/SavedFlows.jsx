@@ -1,6 +1,10 @@
 import { useMemo, useEffect, useState, useCallback } from 'react';
 import { Background, Controls, ReactFlow } from '@xyflow/react';
-import { getNodeType, denormalizeEdgesFromBackend } from '../features/flow/utils';
+import {
+  buildFlowEdgesFromBackend,
+  buildFlowNodesFromApi,
+  normalizeFlowList,
+} from '../features/flow/utils';
 import { getRules } from '../api';
 import ActionNode from '../components/ActionNode';
 import ConditionNode from '../components/Conditions/Condition';
@@ -12,31 +16,7 @@ const nodeTypes = {
   conditionNodeWithArgs: ConditionWithArgsNode,
 };
 
-const buildNodes = (flow) => {
-  if (!flow?.nodes) return [];
-
-  return Object.entries(flow.nodes).map(([nodeId, nodeData]) => ({
-    id: nodeId,
-    type: getNodeType(nodeData.type),
-    position: flow.positions?.[nodeId] ?? { x: 0, y: 0 },
-    data: {
-      label: nodeData.operation || nodeData.set || nodeId,
-      apiType: nodeData.type,
-      operation: nodeData.operation,
-      arguments: nodeData.arguments,
-      set: nodeData.set,
-      isStartNode: nodeId === flow.startNode,
-      isReadOnly: true,
-    },
-  }));
-};
-
-const buildEdges = (flow) => {
-  const edges = flow?.edges ?? [];
-  return denormalizeEdgesFromBackend(edges);
-};
-
-export const SavedFlows = ({ selectedFlowId, onSelectFlow }) => {
+export const SavedFlows = ({ selectedFlowId, onSelectFlow, onEditFlow }) => {
   const [flows, setFlows] = useState([]);
   const [currentFlowId, setCurrentFlowId] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -47,8 +27,7 @@ export const SavedFlows = ({ selectedFlowId, onSelectFlow }) => {
       setIsLoading(true);
       setError(null);
       const data = await getRules();
-      const flowsList = Array.isArray(data) ? data : [data];
-      const withIds = flowsList.map((f, idx) => ({ id: f.id || `flow-${idx}`, ...f }));
+      const withIds = normalizeFlowList(data);
       
       setFlows(withIds);
       if (withIds.length > 0) {
@@ -72,8 +51,11 @@ export const SavedFlows = ({ selectedFlowId, onSelectFlow }) => {
     [flows, activeFlowId],
   );
 
-  const nodes = useMemo(() => buildNodes(activeFlow), [activeFlow]);
-  const edges = useMemo(() => buildEdges(activeFlow), [activeFlow]);
+  const nodes = useMemo(
+    () => buildFlowNodesFromApi(activeFlow, null, { isReadOnly: true }),
+    [activeFlow],
+  );
+  const edges = useMemo(() => buildFlowEdgesFromBackend(activeFlow), [activeFlow]);
 
   const handleSelectFlow = useCallback(
     (flowId) => {
@@ -111,8 +93,17 @@ export const SavedFlows = ({ selectedFlowId, onSelectFlow }) => {
           {!isLoading && !error && activeFlow && (
             <div className="saved-flow-diagram">
               <div className="saved-flow-meta">
-                <h2>{activeFlow.title || 'Fluxo salvo'}</h2>
-                <p>{activeFlow.description ?? 'Diagrama do fluxo persistido.'}</p>
+                <div>
+                  <h2>{activeFlow.title || 'Fluxo salvo'}</h2>
+                  <p>{activeFlow.description ?? 'Diagrama do fluxo persistido.'}</p>
+                </div>
+                <button 
+                  type="button"
+                  className="secondary-button saved-flow-edit-button"
+                  onClick={() => onEditFlow?.(activeFlow.id)}
+                >
+                  Editar
+                </button>
               </div>
               <div className="reactflow-wrapper">
                 <ReactFlow
