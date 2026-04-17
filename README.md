@@ -210,20 +210,3 @@ src/
 1. O fluxo selecionado e carregado e seus nodes e conexoes sao reconstruidos no canvas.
 2. O usuario modifica o grafo normalmente.
 3. Ao confirmar, o payload atualizado e enviado para `PUT /engine/rule/:id`.
-
-## Pontos de atencao atuais
-
-- A `baseURL` da API esta fixa em codigo em `src/api/index.js`.
-- Nao ha tratamento visual para falha no carregamento inicial dos operadores; o erro vai apenas para o console.
-- Ainda nao existe suite de testes automatizados.
-- O campo de argumentos em `CONDITION_WITH_ARGS` hoje trabalha com a chave `value`.
-- O fluxo de criacao (builder) nao recarrega a lista de fluxos salvos automaticamente apos o envio.
-
-## Possiveis evolucoes
-
-- Mover a URL da API para variaveis de ambiente do Vite.
-- Adicionar estados de loading e erro para a carga de operadores.
-- Criar testes para `buildFlowPayload` e validacoes de conexao.
-- Permitir edicao mais rica dos argumentos por tipo de operador.
-- Redirecionar para a lista de fluxos apos criacao bem-sucedida.
-- Adicionar confirmacao antes de descartar edicoes nao salvas.
