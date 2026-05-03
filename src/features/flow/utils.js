@@ -3,10 +3,10 @@ export const CONDITION_WITH_ARGS = 'CONDITION_WITH_ARGS';
 export const ACTION = 'ACTION';
 
 export const START_NODE_ERROR =
-  'O startNode deve ser um node do tipo CONDITION. CONDITION_WITH_ARGS e ACTION nao podem iniciar o fluxo.';
+  'O startNode deve ser um node do tipo CONDITION ou CONDITION_WITH_ARGS. ACTION nao pode iniciar o fluxo.';
 
 export const FIRST_NODE_ERROR =
-  'O primeiro node do fluxo deve ser do tipo CONDITION.';
+  'O primeiro node do fluxo deve ser do tipo CONDITION ou CONDITION_WITH_ARGS.';
 
 export const INVALID_CONNECTION_ERROR =
   'Conexao invalida: cada branch true/false aceita um destino e cada node pode ter apenas uma entrada.';
@@ -48,7 +48,7 @@ export const getNodeType = (operatorType) => {
   return 'default';
 };
 
-export const canBeStartNode = (apiType) => apiType === CONDITION;
+export const canBeStartNode = (apiType) => isConditionType(apiType);
 
 export const buildNodeData = (operator, onChangeArguments) => {
   const apiType = getApiType(operator.type);

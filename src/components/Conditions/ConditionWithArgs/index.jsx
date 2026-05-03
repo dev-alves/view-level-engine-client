@@ -15,7 +15,9 @@ function ConditionWithArgsNode({ data }) {
   return (
     <Container>
       <Title>{data.label}</Title>
-      <Handle type="target" position={Position.Top} isConnectable={true} />
+      {!data.isStartNode && (
+        <Handle type="target" position={Position.Top} isConnectable={true} />
+      )}
       <Handle
         id="true"
         type="source"

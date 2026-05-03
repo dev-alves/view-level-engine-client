@@ -128,7 +128,7 @@ export const useFlowEditor = ({ setPayloadError, persistedFlow = null }) => {
 
       return changed ? nextNodes : currentNodes;
     });
-  }, [edges, nodes, setNodes]);
+  }, [edges, setNodes]);
 
   const handleConnect = useCallback(
     (connection) => {
