@@ -57,11 +57,11 @@ export const buildNodeData = (operator, onChangeArguments) => {
     label: operator.name,
     apiType,
     operation: isConditionType(apiType)
-      ? getOperatorValue(operator, ['operation', 'key', 'value', 'name'])
+      ? getOperatorValue(operator, ['operation', 'name'])
       : null,
     set:
       apiType === ACTION
-        ? getOperatorValue(operator, ['set', 'key', 'value', 'name'])
+        ? getOperatorValue(operator, ['set', 'name'])
         : null,
     arguments:
       apiType === CONDITION_WITH_ARGS ? operator.arguments ?? { value: '' } : null,
