@@ -181,7 +181,6 @@ const validatePayloadNode = (nodePayload, nodeId) => {
 const buildPayloadNode = (node, edges) => {
   const basePayload = {
     type: node.data.apiType,
-    label: node.data.label,
     isStartNode: node.data.isStartNode,
   };
 
