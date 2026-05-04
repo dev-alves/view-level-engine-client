@@ -9,7 +9,6 @@ import {
   FIRST_NODE_ERROR,
   getApiType,
   getNodeType,
-  getStartNodeIds,
   INVALID_CONNECTION_ERROR,
   validateConnection,
 } from '../features/flow/utils';
@@ -102,14 +101,12 @@ export const useFlowEditor = ({ setPayloadError, persistedFlow = null }) => {
   }, [loadPersistedFlow, persistedFlow]);
 
   useEffect(() => {
-    const startNodeIds = getStartNodeIds(nodes, edges);
-
     setNodes((currentNodes) => {
+      const targets = new Set(edges.map((edge) => edge.target));
       let changed = false;
 
       const nextNodes = currentNodes.map((node) => {
-        const isStartNode =
-          startNodeIds.has(node.id) && canBeStartNode(node.data.apiType);
+        const isStartNode = node.data.isStartNode && !targets.has(node.id);
 
         if (node.data.isStartNode === isStartNode) {
           return node;
