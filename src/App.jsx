@@ -6,7 +6,7 @@ import {
   ReactFlow,
   ReactFlowProvider,
 } from '@xyflow/react';
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import { createRule } from './api';
 import ActionNode from './components/ActionNode';
 import { Sidebar } from './components/Sidebar';
@@ -125,7 +125,7 @@ export default function App() {
     setCurrentPage('saved');
   }, []);
 
-  const pageContent = useMemo(() => {
+  const renderPage = () => {
     if (currentPage === 'saved') {
       return (
         <SavedFlows
@@ -147,7 +147,7 @@ export default function App() {
     }
 
     return <DragAndDropFlow />;
-  }, [currentPage, selectedFlowId, selectSavedFlow, openEditFlow, handleFlowUpdated, closeEditFlow]);
+  };
 
   return (
     <ReactFlowProvider>
@@ -172,7 +172,7 @@ export default function App() {
               </button>
             </div>
           </header>
-          {pageContent}
+          {renderPage()}
         </div>
       </DragAndDropProvider>
     </ReactFlowProvider>
