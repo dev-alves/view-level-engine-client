@@ -4,6 +4,8 @@ Aplicacao front-end para montar, visualizar e editar regras de decisao em format
 
 O usuario pode criar novos fluxos arrastando operadores para o canvas, visualizar fluxos ja salvos e editar fluxos existentes. O cliente transforma o desenho em um payload estruturado e o envia para os endpoints da API.
 
+> Para detalhes técnicos aprofundados sobre a arquitetura, fluxo de dados, pontos críticos e guia de extensão do projeto, consulte a **[Documentação Arquitetural](docs/ARCHITECTURE.md)**.
+
 ## O que essa app faz
 
 - Busca operadores disponiveis na API em `GET /rules/operators`.
@@ -57,21 +59,40 @@ Ao clicar em "Gerar payload e enviar" (criacao) ou "Atualizar" (edicao), o front
 
 ```json
 {
-  "version": 1,
   "startNode": "node1",
-  "statusEnum": "DRAFT",
+  "statusEnum": "PUBLISHED",
   "nodes": {
     "node1": {
       "type": "CONDITION",
-      "label": "Customer Has Balance",
       "isStartNode": true,
-      "operation": "customerHasBalance",
+      "operation": "IS_ADULT",
       "arguments": null,
       "onTrue": "node2",
-      "onFalse": "node3",
+      "onFalse": null,
       "set": null
+    },
+    "node2": {
+      "type": "ACTION",
+      "isStartNode": false,
+      "operation": null,
+      "arguments": null,
+      "onTrue": null,
+      "onFalse": null,
+      "set": "COMPLETE"
     }
-  }
+  },
+  "positions": {
+    "node1": { "x": 100, "y": 200 },
+    "node2": { "x": 300, "y": 200 }
+  },
+  "edges": [
+    {
+      "id": "xy-edge__node1true-node2",
+      "source": "node1",
+      "target": "node2",
+      "sourceHandle": true
+    }
+  ]
 }
 ```
 
@@ -79,7 +100,8 @@ Observacoes:
 
 - `CONDITION_WITH_ARGS` envia `arguments`.
 - `ACTION` envia `set` e nao possui `onTrue` nem `onFalse`.
-- Os campos `label` e `isStartNode` sao incluidos em todos os nodes.
+- `sourceHandle` e enviado como boolean (`true`/`false`) para o backend.
+- `positions` armazena as coordenadas visuais de cada node no canvas.
 - O preview do payload aparece na sidebar antes e durante o envio.
 
 ## Endpoints esperados
